@@ -1,11 +1,11 @@
 <launch>
     <arg name="ctrl_level" default="highlevel"/>
 
-    <node pkg="unitree_legged_real" type="ros_udp" name="node_ros_udp" output="screen" args="$(arg ctrl_level)"/>
+    <node pkg="unitree_legged_real" type="ros_udp" name="node_ros_udp" args="$(arg ctrl_level)"/>
 
     <param name="control_level" value="$(arg ctrl_level)"/>
 
     <!-- Put the node you want to launch-->
-    <node pkg="unitree_legged_real" type="twist_sub" name="node_twist_sub" output="screen"/>
+    <node pkg="unitree_legged_real" type="twist_sub_2" name="node_twist_sub_2" output="screen"/>
     
 </launch>

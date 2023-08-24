@@ -5,38 +5,67 @@
 #include "convert.h"
 
 using namespace UNITREE_LEGGED_SDK;
+// #define DEBUG
 
+HighCmd high_cmd = {0};
+HighState high_state = {0};
+
+unitree_legged_msgs::HighCmd new_high_cmd;
 unitree_legged_msgs::HighState high_state_ros;
 
-void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
-{
-    printf("cmdVelCallback is running!\t%ld\n", cmd_vel_count);
+ros::Publisher pub_high;
 
-    custom.high_cmd = rosMsg2Cmd(msg);
-
-    printf("cmd_x_vel = %f\n", custom.high_cmd.velocity[0]);
-    printf("cmd_y_vel = %f\n", custom.high_cmd.velocity[1]);
-    printf("cmd_yaw_vel = %f\n", custom.high_cmd.yawSpeed);
-
-    unitree_legged_msgs::HighState high_state_ros;
-
-    high_state_ros = state2rosMsg(custom.high_state);
-
-    pub_high.publish(high_state_ros);
-
-    printf("cmdVelCallback ending!\t%ld\n\n", cmd_vel_count++);
-}
+long cmd_vel_count = 0;
+double x_prev = 0;
+double y_prev = 0;
+double yaw_prev = 0;
+double x_curr;
+double y_curr;
+double yaw_curr;
 
 void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
 {
     static long count = 0;
-    ROS_INFO("highStateCallback %ld", count++);
+    #ifdef DEBUG
+        ROS_INFO("highStateCallback %ld", count++);
+    #endif
     high_state_ros = *state;
+}
+
+void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
+{   
+
+
+    high_cmd = rosMsg2Cmd(msg);
+    
+    #ifdef DEBUG
+        printf("cmdVelCallback is running!\t%ld\n", cmd_vel_count);
+        printf("cmd_x_vel = %f\n", high_cmd.velocity[0]);
+        printf("cmd_y_vel = %f\n", high_cmd.velocity[1]);
+        printf("cmd_yaw_vel = %f\n", high_cmd.yawSpeed);
+    #endif
+
+    x_curr = high_cmd.velocity[0];
+    y_curr = high_cmd.velocity[1];
+    yaw_curr = high_cmd.yawSpeed;
+    
+    new_high_cmd.velocity[0] = x_curr * 0.8 + x_prev * 0.2;
+    new_high_cmd.velocity[1] = y_curr * 0.8 + y_prev * 0.2;
+    new_high_cmd.yawSpeed = yaw_curr * 0.8 + yaw_prev * 0.2;
+
+    x_prev = x_curr;
+    y_prev = y_curr;
+    yaw_prev = yaw_curr;
+
+    high_state_ros = state2rosMsg(high_state);
+
+    pub_high.publish(high_state_ros);
+
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "example_walk_without_lcm");
+    ros::init(argc, argv, "twist_sub_2");
 
     std::cout << "WARNING: Control level is set to HIGH-level." << std::endl
               << "Make sure the robot is standing on the ground." << std::endl
@@ -50,12 +79,20 @@ int main(int argc, char **argv)
     long motiontime = 0;
 
     unitree_legged_msgs::HighCmd high_cmd_ros;
+    unitree_legged_msgs::HighState high_state_ros;
 
+    // Publisher
     ros::Publisher pub = nh.advertise<unitree_legged_msgs::HighCmd>("high_cmd", 1000);
+    pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
+
+    // Subscriber
+    ros::Subscriber sub_cmd_vel = nh.subscribe("cmd_vel", 1, cmdVelCallback);
     ros::Subscriber sub = nh.subscribe("high_state", 1000, highStateCallback);
+
+    
     while (ros::ok())
     {   
-        printf("rpy: %f %f %f\n", high_state_ros.imu.rpy[0], high_state_ros.imu.rpy[1], high_state_ros.imu.rpy[2]);
+        // printf("rpy: %f %f %f\n", high_state_ros.imu.rpy[0], high_state_ros.imu.rpy[1], high_state_ros.imu.rpy[2]);
         
         motiontime += 2;
 
@@ -75,99 +112,16 @@ int main(int argc, char **argv)
         high_cmd_ros.yawSpeed = 0.0f;
         high_cmd_ros.reserve = 0;
 
-        // walk
-        high_cmd_ros.mode = 2;
-        high_cmd_ros.gaitType = 2;
-        high_cmd_ros.velocity[0] = /* cmd_vel from ros topic */// 0.4f; // -1  ~ +1
-        high_cmd_ros.velocity[1] = ; // y
-        high_cmd_ros.velocity[2] = ; // z
-        high_cmd_ros.yawSpeed =  /* cmd_vel from ros topic */;
-        high_cmd_ros.footRaiseHeight = 0.1;
-        // printf("walk\n");
-
-        // if (motiontime > 0 && motiontime < 1000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.euler[0] = -0.3;
-        // }
-        // if (motiontime > 1000 && motiontime < 2000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.euler[0] = 0.3;
-        // }
-        // if (motiontime > 2000 && motiontime < 3000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.euler[1] = -0.2;
-        // }
-        // if (motiontime > 3000 && motiontime < 4000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.euler[1] = 0.2;
-        // }
-        // if (motiontime > 4000 && motiontime < 5000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.euler[2] = -0.2;
-        // }
-        // if (motiontime > 5000 && motiontime < 6000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.euler[2] = 0.2;
-        // }
-        // if (motiontime > 6000 && motiontime < 7000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.bodyHeight = -0.2;
-        // }
-        // if (motiontime > 7000 && motiontime < 8000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.bodyHeight = 0.1;
-        // }
-        // if (motiontime > 8000 && motiontime < 9000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        //     high_cmd_ros.bodyHeight = 0.0;
-        // }
-        // if (motiontime > 9000 && motiontime < 11000)
-        // {
-        //     high_cmd_ros.mode = 5;
-        // }
-        // if (motiontime > 11000 && motiontime < 13000)
-        // {
-        //     high_cmd_ros.mode = 6;
-        // }
-        // if (motiontime > 13000 && motiontime < 14000)
-        // {
-        //     high_cmd_ros.mode = 0;
-        // }
-        // if (motiontime > 14000 && motiontime < 18000)
-        // {
-        //     high_cmd_ros.mode = 2;
-        //     high_cmd_ros.gaitType = 2;
-        //     high_cmd_ros.velocity[0] = 0.4f; // -1  ~ +1
-        //     high_cmd_ros.yawSpeed = 2;
-        //     high_cmd_ros.footRaiseHeight = 0.1;
-        //     // printf("walk\n");
-        // }
-        // if (motiontime > 18000 && motiontime < 20000)
-        // {
-        //     high_cmd_ros.mode = 0;
-        //     high_cmd_ros.velocity[0] = 0;
-        // }
-        // if (motiontime > 20000 && motiontime < 24000)
-        // {
-        //     high_cmd_ros.mode = 2;
-        //     high_cmd_ros.gaitType = 1;
-        //     high_cmd_ros.velocity[0] = 0.2f; // -1  ~ +1
-        //     high_cmd_ros.bodyHeight = 0.1;
-        //     // printf("walk\n");
-        // }
-        // if (motiontime > 24000)
-        // {
-        //     high_cmd_ros.mode = 1;
-        // }
+        if (motiontime >=4)
+        {
+            // walk
+            high_cmd_ros.mode = 2;
+            high_cmd_ros.gaitType = 1;
+            high_cmd_ros.velocity[0] = new_high_cmd.velocity[0];
+            high_cmd_ros.velocity[1] = new_high_cmd.velocity[1];
+            high_cmd_ros.yawSpeed =  new_high_cmd.yawSpeed; 
+            high_cmd_ros.footRaiseHeight = 0.1;
+        }
         pub.publish(high_cmd_ros);
 
         ros::spinOnce();
@@ -178,23 +132,3 @@ int main(int argc, char **argv)
 }
 
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "twist_sub");
-
-    ros::NodeHandle nh;
-
-    pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
-
-    sub_cmd_vel = nh.subscribe("cmd_vel", 1, cmdVelCallback);
-
-    LoopFunc loop_udpSend("high_udp_send", 0.002, 3, boost::bind(&Custom::highUdpSend, &custom));
-    LoopFunc loop_udpRecv("high_udp_recv", 0.002, 3, boost::bind(&Custom::highUdpRecv, &custom));
-
-    loop_udpSend.start();
-    loop_udpRecv.start();
-
-    ros::spin();
-
-    return 0;
-}
