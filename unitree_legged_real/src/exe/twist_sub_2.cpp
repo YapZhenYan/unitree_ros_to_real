@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     unitree_legged_msgs::HighState high_state_ros;
 
     // Publisher
-    ros::Publisher pub = nh.advertise<unitree_legged_msgs::HighCmd>("high_cmd", 1000);
+    ros::Publisher pub = nh.advertise<unitree_legged_msgs::HighCmd>("high_cmd", 1);
     pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
 
     // Subscriber
