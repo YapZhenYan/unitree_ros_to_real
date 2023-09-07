@@ -3,6 +3,8 @@
 #include <unitree_legged_msgs/HighState.h>
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
 #include "convert.h"
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/JointState.h>
 
 using namespace UNITREE_LEGGED_SDK;
 // #define DEBUG
@@ -14,6 +16,8 @@ unitree_legged_msgs::HighCmd new_high_cmd;
 unitree_legged_msgs::HighState high_state_ros;
 
 ros::Publisher pub_high;
+ros::Publisher pub_imu;
+ros::Publisher pub_jointfoot;
 
 long cmd_vel_count = 0;
 double x_prev = 0;
@@ -25,11 +29,55 @@ double yaw_curr;
 
 void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
 {
-    static long count = 0;
     #ifdef DEBUG
         ROS_INFO("highStateCallback %ld", count++);
     #endif
-    high_state_ros = *state;
+    // high_state_ros = *state;
+    std_msgs::Header header;
+    header.stamp.sec = state->head[0]; 
+    header.stamp.nsec = state->head[1];
+
+    sensor_msgs::Imu imu_msg;
+    // Extract IMU data
+    imu_msg.header = header;
+    imu_msg.orientation.x = state->imu.quaternion[0];
+    imu_msg.orientation.y = state->imu.quaternion[1];
+    imu_msg.orientation.z = state->imu.quaternion[2];
+    imu_msg.orientation.w = state->imu.quaternion[3];
+
+    imu_msg.angular_velocity.x = state->imu.gyroscope[0];
+    imu_msg.angular_velocity.y = state->imu.gyroscope[1];
+    imu_msg.angular_velocity.z = state->imu.gyroscope[2];
+
+    imu_msg.linear_acceleration.x = state->imu.accelerometer[0];
+    imu_msg.linear_acceleration.y = state->imu.accelerometer[1];
+    imu_msg.linear_acceleration.z = state->imu.accelerometer[2];    
+
+    sensor_msgs::JointState joint_foot_msg;
+    std::vector<std::string> joint_names = 
+    {
+        "FL0", "FL1", "FL2", "FR0", "FR1", "FR2",
+        "RL0", "RL1", "RL2", "RR0", "RR1", "RR2",
+        "FL_foot", "FR_foot", "RL_foot"
+    };
+
+    joint_foot_msg.header = header;
+
+    // Extract motor states and populate the JointState message
+    for (int i = 0; i < 12; ++i) {
+
+        // Extract motor state data for each leg
+        const unitree_legged_msgs::MotorState& motor_state = state->motorState[i];
+
+         // Assuming you want to populate position, velocity, and effort fields
+        joint_foot_msg.name.push_back(joint_names[i]);
+        joint_foot_msg.position.push_back(motor_state.q);
+        joint_foot_msg.velocity.push_back(motor_state.dq);
+        joint_foot_msg.effort.push_back(motor_state.tauEst);
+    }
+
+    pub_imu.publish(imu_msg);
+    pub_jointfoot.publish(joint_foot_msg);
 }
 
 void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
@@ -84,10 +132,13 @@ int main(int argc, char **argv)
     // Publisher
     ros::Publisher pub = nh.advertise<unitree_legged_msgs::HighCmd>("high_cmd", 1);
     pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
+    pub_imu = nh.advertise<sensor_msgs::Imu>("/hardware_go1/imu", 1);
+    pub_jointfoot = nh.advertise<sensor_msgs::JointState>("/hardware_go1/joint_foot", 1);
 
     // Subscriber
     ros::Subscriber sub_cmd_vel = nh.subscribe("cmd_vel", 1, cmdVelCallback);
-    ros::Subscriber sub = nh.subscribe("high_state", 1000, highStateCallback);
+    ros::Subscriber sub = nh.subscribe("high_state", 1, highStateCallback);
+
 
     
     while (ros::ok())
