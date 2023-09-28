@@ -5,6 +5,7 @@
 #include "convert.h"
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/JointState.h>
+#include <nav_msgs/Odometry.h>
 
 using namespace UNITREE_LEGGED_SDK;
 // #define DEBUG
@@ -18,6 +19,7 @@ unitree_legged_msgs::HighState high_state_ros;
 ros::Publisher pub_high;
 ros::Publisher pub_imu;
 ros::Publisher pub_jointfoot;
+ros::Publisher pub_odom;
 
 long cmd_vel_count = 0;
 double x_prev = 0;
@@ -53,6 +55,19 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
     imu_msg.linear_acceleration.y = state->imu.accelerometer[1];
     imu_msg.linear_acceleration.z = state->imu.accelerometer[2];    
 
+
+    // Extract Odom data
+    nav_msgs::Odometry odom_msg;
+    odom_msg.header.stamp = ros::Time::now();
+    odom_msg.header.frame_id = "odom";
+    odom_msg.pose.pose.position.x = state.position[0]; 
+    odom_msg.pose.pose.position.y = state.position[1];
+    odom_msg.pose.pose.position.z = state.position[2];
+    odom_msg.pose.pose.orientation.w =  state->imu.quaternion[0];
+    odom_msg.pose.pose.orientation.x =  state->imu.quaternion[1];
+    odom_msg.pose.pose.orientation.y =  state->imu.quaternion[2];
+    odom_msg.pose.pose.orientation.z =  state->imu.quaternion[3];
+
     sensor_msgs::JointState joint_foot_msg;
     std::vector<std::string> joint_names = 
     {
@@ -76,8 +91,10 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
         joint_foot_msg.effort.push_back(motor_state.tauEst);
     }
 
+
     pub_imu.publish(imu_msg);
     pub_jointfoot.publish(joint_foot_msg);
+    pub_odom.publish(odom_msg);
 }
 
 void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
@@ -134,6 +151,7 @@ int main(int argc, char **argv)
     pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
     pub_imu = nh.advertise<sensor_msgs::Imu>("/hardware_go1/imu", 1);
     pub_jointfoot = nh.advertise<sensor_msgs::JointState>("/hardware_go1/joint_foot", 1);
+    pub_odom = nh.advertise<nav_msgs::Odometry>("/hardware_go1/odometry", 1);
 
     // Subscriber
     ros::Subscriber sub_cmd_vel = nh.subscribe("cmd_vel", 1, cmdVelCallback);
