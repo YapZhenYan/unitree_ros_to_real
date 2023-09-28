@@ -90,3 +90,14 @@ roslaunch unitree_legged_real keyboard_control.launch
 
 And before you do the low-level control, please press L2+A to sit the robot down and then press L1+L2+start to make the robot into
 mode in which you can do joint-level control, finally make sure you hang the robot up before you run low-level control.
+
+# Run controller (Always go to ws and source)
+1st Terminal:
+
+```
+roslaunch unitree_legged_real real.launch
+```
+2nd Terminal:
+```
+roslaunch teleop_twist_joy teleop.launch
+```
