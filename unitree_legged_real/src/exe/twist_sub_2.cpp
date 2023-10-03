@@ -60,9 +60,9 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
     nav_msgs::Odometry odom_msg;
     odom_msg.header.stamp = ros::Time::now();
     odom_msg.header.frame_id = "odom";
-    odom_msg.pose.pose.position.x = state.position[0]; 
-    odom_msg.pose.pose.position.y = state.position[1];
-    odom_msg.pose.pose.position.z = state.position[2];
+    odom_msg.pose.pose.position.x = state->position[0]; 
+    odom_msg.pose.pose.position.y = state->position[1];
+    odom_msg.pose.pose.position.z = state->position[2];
     odom_msg.pose.pose.orientation.w =  state->imu.quaternion[0];
     odom_msg.pose.pose.orientation.x =  state->imu.quaternion[1];
     odom_msg.pose.pose.orientation.y =  state->imu.quaternion[2];
