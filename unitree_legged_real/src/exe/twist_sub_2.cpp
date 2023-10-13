@@ -42,10 +42,10 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
     sensor_msgs::Imu imu_msg;
     // Extract IMU data
     imu_msg.header = header;
-    imu_msg.orientation.x = state->imu.quaternion[0];
-    imu_msg.orientation.y = state->imu.quaternion[1];
-    imu_msg.orientation.z = state->imu.quaternion[2];
-    imu_msg.orientation.w = state->imu.quaternion[3];
+    imu_msg.orientation.x = state->imu.quaternion[1];
+    imu_msg.orientation.y = state->imu.quaternion[2];
+    imu_msg.orientation.z = state->imu.quaternion[3];
+    imu_msg.orientation.w = state->imu.quaternion[0];
 
     imu_msg.angular_velocity.x = state->imu.gyroscope[0];
     imu_msg.angular_velocity.y = state->imu.gyroscope[1];
@@ -63,10 +63,10 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
     odom_msg.pose.pose.position.x = state->position[0]; 
     odom_msg.pose.pose.position.y = state->position[1];
     odom_msg.pose.pose.position.z = state->position[2];
-    odom_msg.pose.pose.orientation.x =  state->imu.quaternion[0];
-    odom_msg.pose.pose.orientation.y =  state->imu.quaternion[1];
-    odom_msg.pose.pose.orientation.z =  state->imu.quaternion[2];
-    odom_msg.pose.pose.orientation.w =  state->imu.quaternion[3];
+    odom_msg.pose.pose.orientation.x =  state->imu.quaternion[1];
+    odom_msg.pose.pose.orientation.y =  state->imu.quaternion[2];
+    odom_msg.pose.pose.orientation.z =  state->imu.quaternion[3];
+    odom_msg.pose.pose.orientation.w =  state->imu.quaternion[0];
 
     sensor_msgs::JointState joint_foot_msg;
     std::vector<std::string> joint_names = 
