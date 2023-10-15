@@ -205,7 +205,7 @@ int main(int argc, char **argv)
             high_cmd_ros.velocity[0] = new_high_cmd.velocity[0];
             high_cmd_ros.velocity[1] = new_high_cmd.velocity[1];
             high_cmd_ros.yawSpeed =  new_high_cmd.yawSpeed; 
-            high_cmd_ros.footRaiseHeight = 0.1;
+            high_cmd_ros.footRaiseHeight = 0.08;
         }
         pub.publish(high_cmd_ros);
 
