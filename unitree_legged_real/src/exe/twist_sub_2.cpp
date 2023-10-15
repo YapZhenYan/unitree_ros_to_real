@@ -179,18 +179,23 @@ int main(int argc, char **argv)
         high_cmd_ros.head[0] = 0xFE;
         high_cmd_ros.head[1] = 0xEF;
         high_cmd_ros.levelFlag = HIGHLEVEL;
-        high_cmd_ros.mode = 0;
-        high_cmd_ros.gaitType = 0;
-        high_cmd_ros.speedLevel = 0;
-        high_cmd_ros.footRaiseHeight = 0;
-        high_cmd_ros.bodyHeight = 0;
-        high_cmd_ros.euler[0] = 0;
-        high_cmd_ros.euler[1] = 0;
-        high_cmd_ros.euler[2] = 0;
-        high_cmd_ros.velocity[0] = 0.0f;
-        high_cmd_ros.velocity[1] = 0.0f;
-        high_cmd_ros.yawSpeed = 0.0f;
-        high_cmd_ros.reserve = 0;
+        // high_cmd_ros.speedLevel = 0;
+        // high_cmd_ros.footRaiseHeight = 0;
+        // high_cmd_ros.bodyHeight = 0;
+        // high_cmd_ros.euler[0] = 0;
+        // high_cmd_ros.euler[1] = 0;
+        // high_cmd_ros.euler[2] = 0;
+        // high_cmd_ros.reserve = 0;
+
+    
+        if (motiontime < 4)
+        {   
+            high_cmd_ros.mode = 0;
+            high_cmd_ros.gaitType = 0;
+            high_cmd_ros.velocity[0] = 0.0f;
+            high_cmd_ros.velocity[1] = 0.0f;
+            high_cmd_ros.yawSpeed = 0.0f;
+        }
 
         if (motiontime >=4)
         {
