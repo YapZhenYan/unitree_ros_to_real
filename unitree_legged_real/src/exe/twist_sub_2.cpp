@@ -29,6 +29,15 @@ double x_curr;
 double y_curr;
 double yaw_curr;
 
+float constrain(float val, float max, float min){
+    if (val > max)
+        return max;
+    else if (val < min)
+        return min;
+    else
+        return val;
+}
+
 void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
 {
     #ifdef DEBUG
@@ -100,16 +109,20 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
 void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 {   
 
-
     high_cmd = rosMsg2Cmd(msg);
-    
+
+    // setting speed limit
+    high_cmd.velocity[0] = constrain(cmd_vel_.linear.x, 0.4, -0.4);
+    high_cmd.velocity[1] = constrain(cmd_vel_.linear.y , 0.4,-0.4_);
+    high_cmd.yawSpeed = constrain(cmd_vel_.angular.z, 0.5, -0.5); 
+
     #ifdef DEBUG
         printf("cmdVelCallback is running!\t%ld\n", cmd_vel_count);
         printf("cmd_x_vel = %f\n", high_cmd.velocity[0]);
         printf("cmd_y_vel = %f\n", high_cmd.velocity[1]);
         printf("cmd_yaw_vel = %f\n", high_cmd.yawSpeed);
     #endif
-
+    
     x_curr = high_cmd.velocity[0];
     y_curr = high_cmd.velocity[1];
     yaw_curr = high_cmd.yawSpeed;
@@ -157,8 +170,6 @@ int main(int argc, char **argv)
     ros::Subscriber sub_cmd_vel = nh.subscribe("cmd_vel", 1, cmdVelCallback);
     ros::Subscriber sub = nh.subscribe("high_state", 1, highStateCallback);
 
-
-    
     while (ros::ok())
     {   
         // printf("rpy: %f %f %f\n", high_state_ros.imu.rpy[0], high_state_ros.imu.rpy[1], high_state_ros.imu.rpy[2]);
