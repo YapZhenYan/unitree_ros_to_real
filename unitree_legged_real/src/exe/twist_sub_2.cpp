@@ -112,9 +112,9 @@ void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
     high_cmd = rosMsg2Cmd(msg);
 
     // setting speed limit
-    high_cmd.velocity[0] = constrain(cmd_vel_.linear.x, 0.4, -0.4);
-    high_cmd.velocity[1] = constrain(cmd_vel_.linear.y , 0.4,-0.4_);
-    high_cmd.yawSpeed = constrain(cmd_vel_.angular.z, 0.5, -0.5); 
+    high_cmd.velocity[0] = constrain(high_cmd.velocity[0] , 0.4, -0.4);
+    high_cmd.velocity[1] = constrain(high_cmd.velocity[1] , 0.4,-0.4);
+    high_cmd.yawSpeed = constrain(high_cmd.yawSpeed, 0.5, -0.5); 
 
     #ifdef DEBUG
         printf("cmdVelCallback is running!\t%ld\n", cmd_vel_count);
