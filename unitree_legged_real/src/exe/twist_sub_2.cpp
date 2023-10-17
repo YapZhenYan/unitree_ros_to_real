@@ -137,7 +137,7 @@ void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 
     high_state_ros = state2rosMsg(high_state);
 
-    pub_high.publish(high_state_ros);
+    // pub_high.publish(high_state_ros);
 
 }
 
