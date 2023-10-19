@@ -81,13 +81,13 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
     {
         "FL0", "FL1", "FL2", "FR0", "FR1", "FR2",
         "RL0", "RL1", "RL2", "RR0", "RR1", "RR2",
-        "FL_foot", "FR_foot", "RL_foot"
+        "FL_foot", "FR_foot", "RL_foot", "RR_foot"
     };
 
     joint_foot_msg.header = header;
 
     // Extract motor states and populate the JointState message
-    for (int i = 0; i < 12; ++i) {
+    for (int i = 0; i < 16; ++i) {
 
         // Extract motor state data for each leg
         const unitree_legged_msgs::MotorState& motor_state = state->motorState[i];
