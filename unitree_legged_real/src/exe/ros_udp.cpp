@@ -13,6 +13,7 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
+#include <std_msgs/Header.h>
 
 using namespace UNITREE_LEGGED_SDK;
 class Custom
@@ -103,11 +104,8 @@ void highCmdCallback(const unitree_legged_msgs::HighCmd::ConstPtr &msg)
     unitree_imu_msg = state2rosMsg(custom.high_state.imu);
     unitree_joint_msg = state2rosMsg(custom.high_state.motorState);
 
-    std_msgs::Header header;
-    header = ros::Time::now();
-
     // Conver unitree_imu to sensor msg imu
-    imu_msg.header = header;
+    imu_msg.header.stamp = ros::Time::now();
     imu_msg.orientation.x = unitree_imu_msg.quaternion[1];
     imu_msg.orientation.y = unitree_imu_msg.quaternion[2];
     imu_msg.orientation.z = unitree_imu_msg.quaternion[3];
@@ -129,7 +127,7 @@ void highCmdCallback(const unitree_legged_msgs::HighCmd::ConstPtr &msg)
         "FL_foot", "FR_foot", "RL_foot", "RR_foot"
     };
 
-    joint_foot_msg.header = header;
+    joint_foot_msg.header.stamp = ros::Time::now();;
 
     for (int i = 0; i < 16; ++i) 
     {
@@ -200,7 +198,7 @@ int main(int argc, char **argv)
     else if (strcasecmp(argv[1], "HIGHLEVEL") == 0)
     {
         sub_high = nh.subscribe("high_cmd", 1, highCmdCallback);
-        
+
         pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
         pub_imu = nh.advertise<sensor_msgs::Imu>("hardware_go1/imu", 1);
         pub_jointfoot = nh.advertise<sensor_msgs::JointState>("/hardware_go1/joint_foot", 1);
