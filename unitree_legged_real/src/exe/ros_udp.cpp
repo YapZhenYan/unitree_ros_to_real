@@ -102,7 +102,6 @@ void highCmdCallback(const unitree_legged_msgs::HighCmd::ConstPtr &msg)
 
     high_state_ros = state2rosMsg(custom.high_state);
     unitree_imu_msg = state2rosMsg(custom.high_state.imu);
-    unitree_joint_msg = state2rosMsg(custom.high_state.motorState);
 
     // Conver unitree_imu to sensor msg imu
     imu_msg.header.stamp = ros::Time::now();
@@ -130,11 +129,12 @@ void highCmdCallback(const unitree_legged_msgs::HighCmd::ConstPtr &msg)
     joint_foot_msg.header.stamp = ros::Time::now();;
 
     for (int i = 0; i < 16; ++i) 
-    {
+    {   
+        unitree_joint_msg = state2rosMsg(custom.high_state.motorState[i]);
         joint_foot_msg.name.push_back(joint_names[i]);
-        joint_foot_msg.position.push_back(unitree_joint_msg.motorState[i].q);
-        joint_foot_msg.velocity.push_back(unitree_joint_msg.motorState[i].dq);
-        joint_foot_msg.effort.push_back(unitree_joint_msg.motorState[i].tauEst);
+        joint_foot_msg.position.push_back(unitree_joint_msg.q);
+        joint_foot_msg.velocity.push_back(unitree_joint_msg.dq);
+        joint_foot_msg.effort.push_back(unitree_joint_msg.tauEst);
     }
 
     // convert unitree high state for position and unitree imu quat for orientation
