@@ -45,8 +45,7 @@ void highStateCallback(const unitree_legged_msgs::HighState::ConstPtr &state)
     #endif
     // high_state_ros = *state;
     std_msgs::Header header;
-    header.stamp.sec = state->head[0]; 
-    header.stamp.nsec = state->head[1];
+    header.stamp = ros::Time::now();
 
     sensor_msgs::Imu imu_msg;
     // Extract IMU data
@@ -137,8 +136,6 @@ void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 
     high_state_ros = state2rosMsg(high_state);
 
-    // pub_high.publish(high_state_ros);
-
 }
 
 int main(int argc, char **argv)
@@ -161,10 +158,9 @@ int main(int argc, char **argv)
 
     // Publisher
     ros::Publisher pub = nh.advertise<unitree_legged_msgs::HighCmd>("high_cmd", 1);
-    pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
     pub_imu = nh.advertise<sensor_msgs::Imu>("/hardware_go1/imu", 1);
     pub_jointfoot = nh.advertise<sensor_msgs::JointState>("/hardware_go1/joint_foot", 1);
-    pub_odom = nh.advertise<nav_msgs::Odometry>("/hardware_go1/odometry", 1);
+    pub_odom = nh.advertise<nav_msgs::Odometry>("/hardware_go1/estimated_odom", 1);
 
     // Subscriber
     ros::Subscriber sub_cmd_vel = nh.subscribe("cmd_vel", 1, cmdVelCallback);
