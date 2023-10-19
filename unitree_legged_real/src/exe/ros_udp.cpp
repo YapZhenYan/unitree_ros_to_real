@@ -3,11 +3,16 @@
 #include <unitree_legged_msgs/HighState.h>
 #include <unitree_legged_msgs/LowCmd.h>
 #include <unitree_legged_msgs/LowState.h>
+#include <unitree_legged_msgs/IMU.h>
+#include <unitree_legged_msgs/MotorState.h>
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
 #include "convert.h"
 #include <chrono>
 #include <pthread.h>
 #include <geometry_msgs/Twist.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/JointState.h>
+#include <nav_msgs/Odometry.h>
 
 using namespace UNITREE_LEGGED_SDK;
 class Custom
@@ -70,6 +75,7 @@ ros::Subscriber sub_high;
 ros::Subscriber sub_low;
 
 ros::Publisher pub_high;
+ros::Publisher pub_imu;
 ros::Publisher pub_low;
 
 long high_count = 0;
@@ -82,10 +88,58 @@ void highCmdCallback(const unitree_legged_msgs::HighCmd::ConstPtr &msg)
     custom.high_cmd = rosMsg2Cmd(msg);
 
     unitree_legged_msgs::HighState high_state_ros;
+    unitree_legged_msgs::IMU unitree_imu_msg;
+    unitree_legged_msgs::MotorState unitree_joint_msg;
+    // unitree_legged_msgs::IMU unitree_imu_msg;
+
+
+    sensor_msgs::Imu imu_msg;
+    nav_msgs::Odometry odom_msg;
+    sensor_msgs::JointState joint_foot_msg;
 
     high_state_ros = state2rosMsg(custom.high_state);
+    unitree_imu_msg = state2rosMsg(custom.high_state.imu);
+    unitree_joint_msg = state2rosMsg(custom.high_state.motorState);
 
+    // Conver unitree_imu to sensor msg imu
+    // imu_msg.header = unitree_imu_msg.header;
+    imu_msg.orientation.x = unitree_imu_msg.quaternion[1];
+    imu_msg.orientation.y = unitree_imu_msg.quaternion[2];
+    imu_msg.orientation.z = unitree_imu_msg.quaternion[3];
+    imu_msg.orientation.w = unitree_imu_msg.quaternion[0];
+
+    imu_msg.angular_velocity.x = unitree_imu_msg.gyroscope[0];
+    imu_msg.angular_velocity.y = unitree_imu_msg.gyroscope[1];
+    imu_msg.angular_velocity.z = unitree_imu_msg.gyroscope[2];
+
+    imu_msg.linear_acceleration.x = unitree_imu_msg.accelerometer[0];
+    imu_msg.linear_acceleration.y = unitree_imu_msg.accelerometer[1];
+    imu_msg.linear_acceleration.z = unitree_imu_msg.accelerometer[2]; 
+
+    // convert unitree motor state to sensor msg joint state
+    std::vector<std::string> joint_names = 
+    {
+        "FL0", "FL1", "FL2", "FR0", "FR1", "FR2",
+        "RL0", "RL1", "RL2", "RR0", "RR1", "RR2",
+        "FL_foot", "FR_foot", "RL_foot", "RR_foot"
+    };
+
+    joint_foot_msg.header = header;
+
+    // Extract motor states and populate the JointState message
+    for (int i = 0; i < 16; ++i) {
+
+        // Extract motor state data for each leg
+        const unitree_legged_msgs::MotorState& motor_state = unitree_joint_msg.motorState[i];
+
+         // Assuming you want to populate position, velocity, and effort fields
+        joint_foot_msg.name.push_back(joint_names[i]);
+        joint_foot_msg.position.push_back(motor_state.q);
+        joint_foot_msg.velocity.push_back(motor_state.dq);
+        joint_foot_msg.effort.push_back(motor_state.tauEst);
+    }
     pub_high.publish(high_state_ros);
+    pub_imu.publish(imu_msg);
 
     printf("highCmdCallback ending !\t%ld\n\n", ::high_count++);
 }
@@ -133,6 +187,7 @@ int main(int argc, char **argv)
     {
         sub_high = nh.subscribe("high_cmd", 1, highCmdCallback);
         pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
+        pub_imu = nh.advertise<sensor_msgs::Imu>("hardware_go1/imu", 1);
 
         LoopFunc loop_udpSend("high_udp_send", 0.002, 3, boost::bind(&Custom::highUdpSend, &custom));
         LoopFunc loop_udpRecv("high_udp_recv", 0.002, 3, boost::bind(&Custom::highUdpRecv, &custom));
