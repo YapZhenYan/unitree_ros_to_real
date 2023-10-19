@@ -71,12 +71,16 @@ public:
 
 Custom custom;
 
+// Subscribers
 ros::Subscriber sub_high;
 ros::Subscriber sub_low;
 
+// Publishers
 ros::Publisher pub_high;
-ros::Publisher pub_imu;
 ros::Publisher pub_low;
+ros::Publisher pub_imu;
+ros::Publisher pub_odom;
+ros::Publisher pub_jointfoot;
 
 long high_count = 0;
 long low_count = 0;
@@ -90,19 +94,20 @@ void highCmdCallback(const unitree_legged_msgs::HighCmd::ConstPtr &msg)
     unitree_legged_msgs::HighState high_state_ros;
     unitree_legged_msgs::IMU unitree_imu_msg;
     unitree_legged_msgs::MotorState unitree_joint_msg;
-    // unitree_legged_msgs::IMU unitree_imu_msg;
-
 
     sensor_msgs::Imu imu_msg;
-    nav_msgs::Odometry odom_msg;
     sensor_msgs::JointState joint_foot_msg;
+    nav_msgs::Odometry odom_msg;
 
     high_state_ros = state2rosMsg(custom.high_state);
     unitree_imu_msg = state2rosMsg(custom.high_state.imu);
     unitree_joint_msg = state2rosMsg(custom.high_state.motorState);
 
+    std_msgs::Header header;
+    header = ros::Time::now();
+
     // Conver unitree_imu to sensor msg imu
-    // imu_msg.header = unitree_imu_msg.header;
+    imu_msg.header = header;
     imu_msg.orientation.x = unitree_imu_msg.quaternion[1];
     imu_msg.orientation.y = unitree_imu_msg.quaternion[2];
     imu_msg.orientation.z = unitree_imu_msg.quaternion[3];
@@ -126,20 +131,29 @@ void highCmdCallback(const unitree_legged_msgs::HighCmd::ConstPtr &msg)
 
     joint_foot_msg.header = header;
 
-    // Extract motor states and populate the JointState message
-    for (int i = 0; i < 16; ++i) {
-
-        // Extract motor state data for each leg
-        const unitree_legged_msgs::MotorState& motor_state = unitree_joint_msg.motorState[i];
-
-         // Assuming you want to populate position, velocity, and effort fields
+    for (int i = 0; i < 16; ++i) 
+    {
         joint_foot_msg.name.push_back(joint_names[i]);
-        joint_foot_msg.position.push_back(motor_state.q);
-        joint_foot_msg.velocity.push_back(motor_state.dq);
-        joint_foot_msg.effort.push_back(motor_state.tauEst);
+        joint_foot_msg.position.push_back(unitree_joint_msg.motorState[i].q);
+        joint_foot_msg.velocity.push_back(unitree_joint_msg.motorState[i].dq);
+        joint_foot_msg.effort.push_back(unitree_joint_msg.motorState[i].tauEst);
     }
+
+    // convert unitree high state for position and unitree imu quat for orientation
+    odom_msg.header.stamp = ros::Time::now();
+    odom_msg.header.frame_id = "odom";
+    odom_msg.pose.pose.position.x = high_state_ros.position[0]; 
+    odom_msg.pose.pose.position.y = high_state_ros.position[1];
+    odom_msg.pose.pose.position.z = high_state_ros.position[2];
+    odom_msg.pose.pose.orientation.x =  unitree_imu_msg.quaternion[1];
+    odom_msg.pose.pose.orientation.y =  unitree_imu_msg.quaternion[2];
+    odom_msg.pose.pose.orientation.z =  unitree_imu_msg.quaternion[3];
+    odom_msg.pose.pose.orientation.w =  unitree_imu_msg.quaternion[0];
+
     pub_high.publish(high_state_ros);
     pub_imu.publish(imu_msg);
+    pub_jointfoot.publish(joint_foot_msg);
+    pub_odom.publish(odom_msg);;
 
     printf("highCmdCallback ending !\t%ld\n\n", ::high_count++);
 }
@@ -186,8 +200,11 @@ int main(int argc, char **argv)
     else if (strcasecmp(argv[1], "HIGHLEVEL") == 0)
     {
         sub_high = nh.subscribe("high_cmd", 1, highCmdCallback);
+        
         pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
         pub_imu = nh.advertise<sensor_msgs::Imu>("hardware_go1/imu", 1);
+        pub_jointfoot = nh.advertise<sensor_msgs::JointState>("/hardware_go1/joint_foot", 1);
+        pub_odom = nh.advertise<nav_msgs::Odometry>("/hardware_go1/estimated_odom", 1);
 
         LoopFunc loop_udpSend("high_udp_send", 0.002, 3, boost::bind(&Custom::highUdpSend, &custom));
         LoopFunc loop_udpRecv("high_udp_recv", 0.002, 3, boost::bind(&Custom::highUdpRecv, &custom));
