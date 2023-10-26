@@ -8,13 +8,10 @@
 #include <nav_msgs/Odometry.h>
 
 using namespace UNITREE_LEGGED_SDK;
-// #define DEBUG
 
 HighCmd high_cmd = {0};
-// HighState high_state = {0};
 
 unitree_legged_msgs::HighCmd new_high_cmd;
-// unitree_legged_msgs::HighState high_state_ros;
 unitree_legged_msgs::HighCmd high_cmd_ros;
 
 // ros::Publisher pub_high;
@@ -46,21 +43,15 @@ void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
     high_cmd = rosMsg2Cmd(msg);
 
     // setting speed limit
-    high_cmd.velocity[0] = constrain(high_cmd.velocity[0] , 0.4, -0.4);
-    high_cmd.velocity[1] = constrain(high_cmd.velocity[1] , 0.4,-0.4);
+    high_cmd.velocity[0] = constrain(high_cmd.velocity[0] , 0.2, -0.2);
+    high_cmd.velocity[1] = constrain(high_cmd.velocity[1] , 0.2,-0.2);
     high_cmd.yawSpeed = constrain(high_cmd.yawSpeed, 0.5, -0.5); 
-
-    #ifdef DEBUG
-        printf("cmdVelCallback is running!\t%ld\n", cmd_vel_count);
-        printf("cmd_x_vel = %f\n", high_cmd.velocity[0]);
-        printf("cmd_y_vel = %f\n", high_cmd.velocity[1]);
-        printf("cmd_yaw_vel = %f\n", high_cmd.yawSpeed);
-    #endif
     
     x_curr = high_cmd.velocity[0];
     y_curr = high_cmd.velocity[1];
     yaw_curr = high_cmd.yawSpeed;
     
+    // making the motion smooth
     new_high_cmd.velocity[0] = x_curr * 0.8 + x_prev * 0.2;
     new_high_cmd.velocity[1] = y_curr * 0.8 + y_prev * 0.2;
     new_high_cmd.yawSpeed = yaw_curr * 0.8 + yaw_prev * 0.2;
@@ -68,8 +59,6 @@ void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg)
     x_prev = x_curr;
     y_prev = y_curr;
     yaw_prev = yaw_curr;
-
-    // high_state_ros = state2rosMsg(high_state);
 
 }
 
@@ -101,6 +90,7 @@ int main(int argc, char **argv)
         high_cmd_ros.head[0] = 0xFE;
         high_cmd_ros.head[1] = 0xEF;
         high_cmd_ros.levelFlag = HIGHLEVEL;
+        high_cmd_ros.bodyHeight = 0.28;
 
     
         if (motiontime < 4)
@@ -110,6 +100,7 @@ int main(int argc, char **argv)
             high_cmd_ros.velocity[0] = 0.0f;
             high_cmd_ros.velocity[1] = 0.0f;
             high_cmd_ros.yawSpeed = 0.0f;
+            high_cmd_ros.bodyHeight = 0.28;
         }
 
         if (motiontime >=4)
@@ -120,6 +111,7 @@ int main(int argc, char **argv)
             high_cmd_ros.velocity[0] = new_high_cmd.velocity[0];
             high_cmd_ros.velocity[1] = new_high_cmd.velocity[1];
             high_cmd_ros.yawSpeed =  new_high_cmd.yawSpeed; 
+            high_cmd_ros.bodyHeight = 0.28;
             high_cmd_ros.footRaiseHeight = 0.08;
         }
         pub.publish(high_cmd_ros);
