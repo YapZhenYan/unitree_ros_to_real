@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <unitree_legged_msgs/HighCmd.h>
 #include <unitree_legged_msgs/HighState.h>
+#include <unitree_legged_msgs/LowState.h>
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
 #include "convert.h"
 #include <sensor_msgs/Imu.h>
