@@ -200,7 +200,7 @@ int main(int argc, char **argv)
         sub_high = nh.subscribe("high_cmd", 1, highCmdCallback);
 
         // pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);
-        pub_high = nh.advertise<unitree_legged_msgs::LowState>("low_state", 1);       // use this temporary.
+        pub_high = nh.advertise<unitree_legged_msgs::HighState>("high_state", 1);       // use this temporary.
         pub_imu = nh.advertise<sensor_msgs::Imu>("hardware_go1/imu", 1);
         pub_jointfoot = nh.advertise<sensor_msgs::JointState>("/hardware_go1/joint_foot", 1);
         pub_odom = nh.advertise<nav_msgs::Odometry>("/hardware_go1/estimated_odom", 1);
